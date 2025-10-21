@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HR Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .form-select {
+            width: 100%;
+            padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="min-h-screen flex">
+
+        <!------ Sidebar hanya muncul jika user sudah login --- -->
+        {% if session.user_id %}
+        <aside id="sidebar" class="w-64 bg-gray-800 text-white fixed h-full p-4 space-y-2">
+            <h1 class="text-2xl font-bold mb-4">HR Dashboard</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="flex items-center text-base py-3 px-4 rounded-lg transition duration-300 hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-900{% endif %}">
+                    Dashboard
+                </a>
+                <a href="{{ url_for('karyawan') }}" class="flex items-center text-base py-3 px-4 rounded-lg transition duration-300 hover:bg-gray-700 {% if request.endpoint == 'karyawan' %}bg-gray-900{% endif %}">
+                    Data Karyawan
+                </a>
+                <a href="{{ url_for('template_kontrak') }}" class="flex items-center text-base py-3 px-4 rounded-lg transition duration-300 hover:bg-gray-700 {% if request.endpoint == 'template_kontrak' %}bg-gray-900{% endif %}">
+                    Template Kontrak
+                </a>
+            </nav>
+        </aside>
+        {% endif %}
+
+        <!-- --- Margin kiri hanya ditambahkan jika user sudah login --- -->
+        <main class="flex-1 w-full {% if session.user_id %}md:ml-64{% endif %}">
+
+            {% if session.user_id %}
+            <header class="bg-white shadow-md p-4 flex justify-between items-center">
+                <div></div> <!-- Spacer -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600">Selamat datang, <span class="font-bold">{{ session.username }}</span>!</span>
+                    <a href="{{ url_for('logout') }}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Logout
+                    </a>
+                </div>
+            </header>
+            {% endif %}
+
+            <div class="p-4 md:p-8">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-4 rounded-md
+                                {% if category == 'success' %} bg-green-100 text-green-800
+                                {% elif category == 'danger' %} bg-red-100 text-red-800
+                                {% else %} bg-yellow-100 text-yellow-800 {% endif %}"
+                                role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+
+        </main>
+    </div>
+
+</body>
+</html>
+

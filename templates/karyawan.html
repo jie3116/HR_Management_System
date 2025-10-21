@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Kelola Data Karyawan{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header Halaman -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Kelola Data Karyawan</h1>
+        <button id="toggleFormBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+            + Tambah Karyawan
+        </button>
+    </div>
+
+    <!-- Form Tambah Karyawan Baru (muncul jika di-klik) -->
+    <div id="addFormContainer" class="hidden bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Tambah Karyawan Baru</h2>
+        <form action="{{ url_for('tambah_karyawan') }}" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Kolom-kolom input tetap sama -->
+            <div>
+                <label class="block text-sm font-medium">Nama Lengkap*</label>
+                <input type="text" name="nama" required class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Jenis Kelamin*</label>
+                <select name="jenis_kelamin" required class="mt-1 form-select">
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">NUP*</label>
+                <input type="text" name="nup" required class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Tempat Lahir*</label>
+                <input type="text" name="tempat_lahir" required class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Tanggal Lahir*</label>
+                <input type="date" name="tanggal_lahir" required class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">NIK*</label>
+                <input type="text" name="nik" required class="mt-1 form-input">
+            </div>
+            <div class="md:col-span-3">
+                 <label class="block text-sm font-medium">Alamat</label>
+                <textarea name="alamat" rows="2" class="mt-1 form-textarea"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Nomor HP</label>
+                <input type="text" name="no_hp" class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Email</label>
+                <input type="email" name="email" class="mt-1 form-input">
+            </div>
+             <div>
+                <label class="block text-sm font-medium">Jabatan</label>
+                <input type="text" name="jabatan" class="mt-1 form-input">
+            </div>
+             <div>
+                <label class="block text-sm font-medium">Unit Kerja</label>
+                <input type="text" name="unit_kerja" class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Tanggal Mulai Bekerja*</label>
+                <input type="date" name="tanggal_mulai" required class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Tanggal Akhir Kontrak</label>
+                <input type="date" name="tanggal_akhir_kontrak" class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Gaji Pokok</label>
+                <input type="number" name="gaji_honorarium" placeholder="Contoh: 5000000" class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Tunjangan Tetap</label>
+                <input type="number" name="tunjangan_tetap" placeholder="Contoh: 1000000" class="mt-1 form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Status Karyawan*</label>
+                <select name="status" required class="mt-1 form-select">
+                    <option value="Aktif">Aktif</option>
+                    <option value="Nonaktif">Nonaktif</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 text-right">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded-lg">Simpan Karyawan</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Unggah Massal -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Tambah Karyawan Massal (via Excel)</h2>
+        <div class="mb-4 text-sm text-gray-600">
+            <p>Unggah file Excel (.xlsx) untuk menambahkan beberapa karyawan sekaligus. Pastikan kolom di file Excel Anda sesuai dengan templat yang disediakan.</p>
+            <a href="{{ url_for('download_template_excel') }}" class="text-blue-600 hover:underline font-semibold">Unduh Templat Excel di sini</a>
+        </div>
+        <form action="{{ url_for('upload_excel') }}" method="post" enctype="multipart/form-data" class="flex items-center space-x-4">
+            <input type="file" name="file" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"/>
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg whitespace-nowrap">Unggah File</button>
+        </form>
+    </div>
+
+    <!-- Daftar Semua Karyawan -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Daftar Semua Karyawan</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-2 px-4 text-left">Nama</th>
+                        <th class="py-2 px-4 text-left">NUP</th>
+                        <th class="py-2 px-4 text-left">Jabatan</th>
+                        <th class="py-2 px-4 text-left">Status</th>
+                        <th class="py-2 px-4 text-left">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for karyawan in semua_karyawan %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 px-4">{{ karyawan.nama }}</td>
+                        <td class="py-2 px-4">{{ karyawan.nup }}</td>
+                        <td class="py-2 px-4">{{ karyawan.jabatan }}</td>
+                        <td class="py-2 px-4">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full {% if karyawan.status == 'Aktif' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ karyawan.status }}
+                            </span>
+                        </td>
+                        <td class="py-2 px-4">
+                            <a href="{{ url_for('detail_karyawan', id=karyawan.id) }}" class="text-blue-600 hover:underline">Detail</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-gray-500">Belum ada data karyawan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('toggleFormBtn').addEventListener('click', function() {
+        var formContainer = document.getElementById('addFormContainer');
+        if (formContainer.classList.contains('hidden')) {
+            formContainer.classList.remove('hidden');
+            this.textContent = '- Tutup Form';
+            this.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+            this.classList.add('bg-gray-500', 'hover:bg-gray-700');
+        } else {
+            formContainer.classList.add('hidden');
+            this.textContent = '+ Tambah Karyawan';
+            this.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+            this.classList.add('bg-blue-500', 'hover:bg-blue-700');
+        }
+    });
+</script>
+{% endblock %}
+

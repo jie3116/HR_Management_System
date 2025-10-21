@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Detail Karyawan - {{ karyawan.nama }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header Halaman -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ karyawan.nama }}</h1>
+            <p class="text-md text-gray-500">{{ karyawan.jabatan or 'Belum ada jabatan' }} - {{ karyawan.unit_kerja or 'Belum ada unit kerja' }}</p>
+        </div>
+        <button onclick="document.getElementById('editModal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+            Edit Data
+        </button>
+    </div>
+
+    <!-- Informasi Detail Karyawan -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Data Pribadi & Pekerjaan</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700">
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">NUP</strong> <span>: {{ karyawan.nup }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">NIK</strong> <span>: {{ karyawan.nik }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Jenis Kelamin</strong> <span>: {{ karyawan.jenis_kelamin }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Tempat, Tanggal Lahir</strong> <span>: {{ karyawan.tempat_lahir }}, {{ karyawan.tanggal_lahir | tanggal }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Nomor HP</strong> <span>: {{ karyawan.no_hp or '-' }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Email</strong> <span>: {{ karyawan.email or '-' }}</span></div>
+            <div class="col-span-2 flex"><strong class="w-48 flex-shrink-0 font-medium">Alamat</strong> <span>: {{ karyawan.alamat or '-' }}</span></div>
+
+            <hr class="md:col-span-2 my-2">
+
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Tanggal Mulai Bekerja</strong> <span>: {{ karyawan.tanggal_mulai | tanggal }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Tanggal Akhir Kontrak</strong> <span>: {{ karyawan.tanggal_akhir_kontrak | tanggal if karyawan.tanggal_akhir_kontrak else 'Tetap' }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Gaji Pokok</strong> <span>: Rp {{ karyawan.gaji_honorarium | rupiah }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Tunjangan Tetap</strong> <span>: Rp {{ karyawan.tunjangan_tetap | rupiah }}</span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Status Karyawan</strong> <span>: <span class="font-semibold {% if karyawan.status == 'Aktif' %}text-green-600{% else %}text-red-600{% endif %}">{{ karyawan.status }}</span></span></div>
+            <div class="flex"><strong class="w-48 flex-shrink-0 font-medium">Status Tindak Lanjut</strong> <span>: <span class="font-semibold">{{ karyawan.tindak_lanjut_kontrak }}</span></span></div>
+        </div>
+    </div>
+
+    <!-- Informasi Kontrak -->
+    {% if karyawan.tanggal_akhir_kontrak %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
+      <p class="font-bold">Informasi Kontrak</p>
+      <p>Sisa masa kontrak: {{ karyawan.sisa_kontrak }} hari.</p>
+    </div>
+    {% endif %}
+
+    <!-- Dokumen Terkait -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Dokumen Terkait</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <!-- Daftar Dokumen -->
+            <div>
+                <h3 class="font-semibold mb-2">Daftar Dokumen</h3>
+                {% if karyawan.dokumen %}
+                <ul class="list-disc list-inside space-y-2">
+                    {% for doc in karyawan.dokumen %}
+                    <li>
+                        <a href="{{ url_for('download_dokumen', dokumen_id=doc.id) }}" class="text-blue-600 hover:underline">{{ doc.jenis }} - {{ doc.file_path | basename }}</a>
+                        <span class="text-xs text-gray-500">({{ doc.tanggal_upload | tanggal }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500">Belum ada dokumen yang diunggah.</p>
+                {% endif %}
+            </div>
+            <!-- Form Upload Dokumen -->
+            <div>
+                <h3 class="font-semibold mb-2">Upload Dokumen Baru</h3>
+                <form action="{{ url_for('upload_dokumen', karyawan_id=karyawan.id) }}" method="post" enctype="multipart/form-data" class="space-y-3">
+                    <div>
+                        <label for="jenis_dokumen" class="block text-sm font-medium text-gray-700">Jenis Dokumen</label>
+                        <select id="jenis_dokumen" name="jenis_dokumen" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option>CV</option>
+                            <option>KTP</option>
+                            <option>KK</option>
+                            <option>Ijazah</option>
+                            <option>SK</option>
+                            <option>Lainnya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="file" class="block text-sm font-medium text-gray-700">Pilih File</label>
+                        <input type="file" name="file" id="file" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Kontrak -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Generate Kontrak Kerja</h2>
+        <form action="{{ url_for('generate_kontrak', karyawan_id=karyawan.id) }}" method="post">
+            <div class="mb-4">
+                <label for="template_id" class="block text-sm font-medium text-gray-700">Pilih Template Kontrak</label>
+                <select id="template_id" name="template_id" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="" disabled selected>-- Pilih salah satu template --</option>
+                    {% for template in templates %}
+                    <option value="{{ template.id }}">{{ template.nama_template }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded-lg">Generate & Simpan Kontrak</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Edit Karyawan -->
+<div id="editModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <form action="{{ url_for('edit_karyawan', id=karyawan.id) }}" method="post">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Edit Data Karyawan</h3>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Kolom-kolom input untuk edit data -->
+                        <div>
+                            <label class="block text-sm font-medium">Nama Lengkap*</label>
+                            <input type="text" name="nama" value="{{ karyawan.nama }}" required class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Jenis Kelamin*</label>
+                            <select name="jenis_kelamin" required class="mt-1 form-select">
+                                <option value="Laki-laki" {% if karyawan.jenis_kelamin == 'Laki-laki' %}selected{% endif %}>Laki-laki</option>
+                                <option value="Perempuan" {% if karyawan.jenis_kelamin == 'Perempuan' %}selected{% endif %}>Perempuan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">NUP*</label>
+                            <input type="text" name="nup" value="{{ karyawan.nup }}" required class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Tempat Lahir*</label>
+                            <input type="text" name="tempat_lahir" value="{{ karyawan.tempat_lahir }}" required class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Tanggal Lahir*</label>
+                            <input type="date" name="tanggal_lahir" value="{{ karyawan.tanggal_lahir.strftime('%Y-%m-%d') }}" required class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">NIK*</label>
+                            <input type="text" name="nik" value="{{ karyawan.nik }}" required class="mt-1 form-input">
+                        </div>
+                        <div class="md:col-span-3">
+                             <label class="block text-sm font-medium">Alamat</label>
+                            <textarea name="alamat" rows="2" class="mt-1 form-textarea">{{ karyawan.alamat }}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Nomor HP</label>
+                            <input type="text" name="no_hp" value="{{ karyawan.no_hp or '' }}" class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Email</label>
+                            <input type="email" name="email" value="{{ karyawan.email or '' }}" class="mt-1 form-input">
+                        </div>
+                         <div>
+                            <label class="block text-sm font-medium">Jabatan</label>
+                            <input type="text" name="jabatan" value="{{ karyawan.jabatan or '' }}" class="mt-1 form-input">
+                        </div>
+                         <div>
+                            <label class="block text-sm font-medium">Unit Kerja</label>
+                            <input type="text" name="unit_kerja" value="{{ karyawan.unit_kerja or '' }}" class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Tanggal Mulai Bekerja*</label>
+                            <input type="date" name="tanggal_mulai" value="{{ karyawan.tanggal_mulai.strftime('%Y-%m-%d') }}" required class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Tanggal Akhir Kontrak</label>
+                            <input type="date" name="tanggal_akhir_kontrak" value="{{ karyawan.tanggal_akhir_kontrak.strftime('%Y-%m-%d') if karyawan.tanggal_akhir_kontrak else '' }}" class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Gaji Pokok</label>
+                            <input type="number" name="gaji_honorarium" value="{{ karyawan.gaji_honorarium or '' }}" class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Tunjangan Tetap</label>
+                            <input type="number" name="tunjangan_tetap" value="{{ karyawan.tunjangan_tetap or '' }}" class="mt-1 form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Status Karyawan*</label>
+                            <select name="status" required class="mt-1 form-select">
+                                <option value="Aktif" {% if karyawan.status == 'Aktif' %}selected{% endif %}>Aktif</option>
+                                <option value="Nonaktif" {% if karyawan.status == 'Nonaktif' %}selected{% endif %}>Nonaktif</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Status Tindak Lanjut*</label>
+                            <select name="tindak_lanjut_kontrak" required class="mt-1 form-select">
+                                {% for status in status_options %}
+                                    <option value="{{ status }}" {% if karyawan.tindak_lanjut_kontrak == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">Simpan Perubahan</button>
+                    <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

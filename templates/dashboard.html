@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header dan Statistik -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-gray-500 text-sm font-medium">Total Karyawan</h2>
+                <p class="text-3xl font-bold text-gray-800">{{ total_karyawan }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-gray-500 text-sm font-medium">Sisa Masa Kontrak <90 Hari</h2>
+                <p class="text-3xl font-bold text-red-500">{{ kontrak_akan_habis | length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daftar Tindak Lanjut Kontrak -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h2 class="text-xl font-bold text-gray-800">Daftar Karyawan Kontrak Akan Habis Dalam <90 Hari</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-2 px-4 text-left">Nama</th>
+                        <th class="py-2 px-4 text-left">Jabatan</th>
+                        <th class="py-2 px-4 text-left">Akhir Kontrak</th>
+                        <th class="py-2 px-4 text-left">Sisa Hari</th>
+                        <th class="py-2 px-4 text-left">Tindak Lanjut</th>
+                        <th class="py-2 px-4 text-left">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for karyawan in kontrak_akan_habis %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4"><a href="{{ url_for('detail_karyawan', id=karyawan.id) }}" class="text-blue-600 hover:underline">{{ karyawan.nama }}</a></td>
+                        <td class="py-3 px-4">{{ karyawan.jabatan }}</td>
+                        <td class="py-3 px-4">{{ karyawan.tanggal_akhir_kontrak | tanggal }}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                {{ karyawan.sisa_kontrak }} hari
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <!-- Status saat ini (Teks Biasa dengan Warna) -->
+                            <span id="status-text-{{ karyawan.id }}">
+                                {% if karyawan.tindak_lanjut_kontrak == 'Belum ditindaklanjuti' %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        {{ karyawan.tindak_lanjut_kontrak }}
+                                    </span>
+                                {% elif karyawan.tindak_lanjut_kontrak == 'Telah dikonfirmasi ke cabang/unit kerja' %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        {{ karyawan.tindak_lanjut_kontrak }}
+                                    </span>
+                                {% elif karyawan.tindak_lanjut_kontrak == 'Dalam proses perpanjangan kontrak' %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        {{ karyawan.tindak_lanjut_kontrak }}
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ karyawan.tindak_lanjut_kontrak }}
+                                    </span>
+                                {% endif %}
+                            </span>
+
+                            <!-- Form Dropdown (Tersembunyi) -->
+                            <form id="status-form-{{ karyawan.id }}" action="{{ url_for('update_tindak_lanjut', id=karyawan.id) }}" method="post" class="hidden items-center space-x-2">
+                                <select name="status_tindak_lanjut" class="form-select text-sm py-1">
+                                    {% for status in status_options %}
+                                        <option value="{{ status }}" {% if karyawan.tindak_lanjut_kontrak == status %}selected{% endif %}>{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">Simpan</button>
+                            </form>
+                        </td>
+                        <td class="py-3 px-4">
+                            <button onclick="toggleEditForm({{ karyawan.id }})" id="edit-btn-{{ karyawan.id }}" class="text-blue-600 hover:underline text-sm">Ubah Status</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-gray-500">Tidak ada karyawan yang kontraknya akan habis dalam waktu dekat.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Semua Karyawan Aktif -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Semua Karyawan Aktif</h2>
+        <form method="get" action="{{ url_for('dashboard') }}" class="mb-4 flex justify-end">
+            <div class="relative w-full max-w-xs">
+                <input type="text" name="search" placeholder="Cari Nama, NUP..." value="{{ search_query or '' }}" class="form-input pr-10">
+                <button type="submit" class="absolute inset-y-0 right-0 px-3 flex items-center bg-blue-500 text-white rounded-r-md hover:bg-blue-600">
+                    Cari
+                </button>
+            </div>
+        </form>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-2 px-4 text-left">Nama</th>
+                        <th class="py-2 px-4 text-left">NUP</th>
+                        <th class="py-2 px-4 text-left">Jabatan</th>
+                        <th class="py-2 px-4 text-left">Status</th>
+                        <th class="py-2 px-4 text-left">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for karyawan in semua_karyawan_aktif %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 px-4">{{ karyawan.nama }}</td>
+                        <td class="py-2 px-4">{{ karyawan.nup }}</td>
+                        <td class="py-2 px-4">{{ karyawan.jabatan }}</td>
+                        <td class="py-2 px-4">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                {{ karyawan.status }}
+                            </span>
+                        </td>
+                        <td class="py-2 px-4">
+                            <a href="{{ url_for('detail_karyawan', id=karyawan.id) }}" class="text-blue-600 hover:underline">Lihat Detail</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-gray-500">Tidak ada karyawan aktif.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleEditForm(karyawanId) {
+        const statusText = document.getElementById(`status-text-${karyawanId}`);
+        const statusForm = document.getElementById(`status-form-${karyawanId}`);
+        const editBtn = document.getElementById(`edit-btn-${karyawanId}`);
+
+        if (statusForm.classList.contains('hidden')) {
+            statusText.classList.add('hidden');
+            statusForm.classList.remove('hidden');
+            statusForm.classList.add('flex');
+            editBtn.textContent = 'Batal';
+        } else {
+            statusText.classList.remove('hidden');
+            statusForm.classList.add('hidden');
+            statusForm.classList.remove('flex');
+            editBtn.textContent = 'Ubah Status';
+        }
+    }
+</script>
+{% endblock %}
+

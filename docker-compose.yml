@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Layanan untuk aplikasi web Flask
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # Sinkronkan kode lokal dengan kontainer untuk pengembangan
+      - .:/app
+    environment:
+      # Ambil DATABASE_URL dari file .env
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Layanan untuk database PostgreSQL
+  db:
+    image: postgres:13
+    volumes:
+      # Simpan data database secara persisten
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      # Ambil kredensial dari file .env
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

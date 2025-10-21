@@ -1,0 +1,30 @@
+Environment variables
+
+.env
+
+Virtual Environment
+
+.venv
+venv/
+venv.bak/
+
+Python cache
+
+pycache/
+*.py[cod]
+
+Database files
+
+*.db
+*.sqlite3
+
+IDE configuration files
+
+.idea/
+.vscode/
+
+files
+uploads/
+
+Docker-specific
+docker-compose.override.yml
