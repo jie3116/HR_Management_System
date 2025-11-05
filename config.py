@@ -17,7 +17,7 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Konfigurasi Folder Upload (tetap sama)
+    # Konfigurasi Folder Upload
     UPLOAD_FOLDER_DOC = os.path.join(basedir, 'uploads/dokumen')
     UPLOAD_FOLDER_KONTRAK = os.path.join(basedir, 'uploads/kontrak')
     UPLOAD_FOLDER_TEMPLATE = os.path.join(basedir, 'uploads/template')

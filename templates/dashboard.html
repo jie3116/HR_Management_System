@@ -13,7 +13,7 @@
                 <p class="text-3xl font-bold text-gray-800">{{ total_karyawan }}</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-gray-500 text-sm font-medium">Sisa Masa Kontrak <90 Hari</h2>
+                <h2 class="text-gray-500 text-sm font-medium">Butuh Tindak Lanjut Kontrak (&lt;60 Hari)</h2>
                 <p class="text-3xl font-bold text-red-500">{{ kontrak_akan_habis | length }}</p>
             </div>
         </div>
@@ -25,7 +25,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h2 class="text-xl font-bold text-gray-800">Daftar Karyawan Kontrak Akan Habis Dalam <90 Hari</h2>
+            <h2 class="text-xl font-bold text-gray-800">Daftar Karyawan Kontrak Akan Habis (&lt;60 Hari)</h2>
         </div>
 
         <div class="overflow-x-auto">
@@ -47,12 +47,28 @@
                         <td class="py-3 px-4">{{ karyawan.jabatan }}</td>
                         <td class="py-3 px-4">{{ karyawan.tanggal_akhir_kontrak | tanggal }}</td>
                         <td class="py-3 px-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                {{ karyawan.sisa_kontrak }} hari
-                            </span>
+                            {# Logika warna sisa hari #}
+                            {% set sisa = karyawan.sisa_kontrak %}
+                            {% if sisa < 30 %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-900 text-white">
+                                    {{ sisa }} hari
+                                </span>
+                            {% elif sisa <= 44 %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-500 text-white">
+                                    {{ sisa }} hari
+                                </span>
+                            {% elif sisa <= 60 %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500 text-white">
+                                    {{ sisa }} hari
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                    {{ sisa }} hari
+                                </span>
+                            {% endif %}
                         </td>
                         <td class="py-3 px-4">
-                            <!-- Status saat ini (Teks Biasa dengan Warna) -->
+                            <!-- Status saat ini -->
                             <span id="status-text-{{ karyawan.id }}">
                                 {% if karyawan.tindak_lanjut_kontrak == 'Belum ditindaklanjuti' %}
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
@@ -72,15 +88,14 @@
                                     </span>
                                 {% endif %}
                             </span>
-
                             <!-- Form Dropdown (Tersembunyi) -->
                             <form id="status-form-{{ karyawan.id }}" action="{{ url_for('update_tindak_lanjut', id=karyawan.id) }}" method="post" class="hidden items-center space-x-2">
-                                <select name="status_tindak_lanjut" class="form-select text-sm py-1">
+                                <select name="status_tindak_lanjut" class="form-select text-sm py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     {% for status in status_options %}
                                         <option value="{{ status }}" {% if karyawan.tindak_lanjut_kontrak == status %}selected{% endif %}>{{ status }}</option>
                                     {% endfor %}
                                 </select>
-                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">Simpan</button>
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm transition duration-150 ease-in-out">Simpan</button>
                             </form>
                         </td>
                         <td class="py-3 px-4">
@@ -99,15 +114,49 @@
 
     <!-- Semua Karyawan Aktif -->
     <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Semua Karyawan Aktif</h2>
-        <form method="get" action="{{ url_for('dashboard') }}" class="mb-4 flex justify-end">
-            <div class="relative w-full max-w-xs">
-                <input type="text" name="search" placeholder="Cari Nama, NUP..." value="{{ search_query or '' }}" class="form-input pr-10">
-                <button type="submit" class="absolute inset-y-0 right-0 px-3 flex items-center bg-blue-500 text-white rounded-r-md hover:bg-blue-600">
-                    Cari
-                </button>
-            </div>
-        </form>
+         <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+             <h2 class="text-xl font-bold text-gray-800">Semua Karyawan Aktif</h2>
+             <!-- Formulir Filter Lengkap -->
+             <form method="get" action="{{ url_for('dashboard') }}" class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                 <!-- Filter Unit Kerja -->
+                 <div class="flex-shrink-0"> {# Mencegah div ini menyusut terlalu kecil #}
+                    <label for="unit_kerja_filter" class="sr-only">Unit Kerja</label>
+                    {% if unit_kerja_options %}
+                        <select id="unit_kerja_filter" name="unit_kerja" class="text-sm py-2 px-3 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"> {# Dihapus block dan w-full, ditambah cursor-pointer #}
+                            <option value="">Semua Unit Kerja</option>
+                            {% for unit in unit_kerja_options %}
+                                <option value="{{ unit }}" {% if selected_unit_kerja == unit %}selected{% endif %}>{{ unit }}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                         <select id="unit_kerja_filter" name="unit_kerja" disabled class="text-sm py-2 px-3 border border-gray-300 rounded shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed">
+                            <option value="">Tidak ada Unit Kerja</option>
+                         </select>
+                    {% endif %}
+                 </div>
+                 <!-- Filter Gaji -->
+                 <div class="flex-shrink-0">
+                    <label for="gaji_min_filter" class="sr-only">Gaji Min</label>
+                    <input id="gaji_min_filter" type="number" name="gaji_min" placeholder="Gaji Min" value="{{ gaji_min or '' }}" class="form-input text-sm py-2 w-28 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                 </div>
+                 <div class="flex-shrink-0">
+                    <label for="gaji_max_filter" class="sr-only">Gaji Max</label>
+                    <input id="gaji_max_filter" type="number" name="gaji_max" placeholder="Gaji Max" value="{{ gaji_max or '' }}" class="form-input text-sm py-2 w-28 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                 </div>
+
+                 <!-- Filter Pencarian Teks -->
+                 <div class="relative flex items-center flex-shrink-0">
+                    <label for="search_filter" class="sr-only">Cari</label>
+                    <input id="search_filter" type="text" name="search" placeholder="Cari Nama, NUP..." value="{{ search_query or '' }}" class="form-input text-sm py-2 pr-10 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <button type="submit" class="absolute inset-y-0 right-0 px-3 flex items-center bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+                        Cari
+                    </button>
+                 </div>
+                 <!-- Tombol Reset Filter -->
+                 <a href="{{ url_for('dashboard') }}" class="text-sm text-gray-600 hover:text-blue-600 underline flex-shrink-0">Reset Filter</a>
+             </form>
+         </div>
+
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white">
                 <thead class="bg-gray-100">
@@ -115,6 +164,8 @@
                         <th class="py-2 px-4 text-left">Nama</th>
                         <th class="py-2 px-4 text-left">NUP</th>
                         <th class="py-2 px-4 text-left">Jabatan</th>
+                        <th class="py-2 px-4 text-left">Unit Kerja</th>
+                        <th class="py-2 px-4 text-left">Gaji Pokok</th>
                         <th class="py-2 px-4 text-left">Status</th>
                         <th class="py-2 px-4 text-left">Aksi</th>
                     </tr>
@@ -124,9 +175,13 @@
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-2 px-4">{{ karyawan.nama }}</td>
                         <td class="py-2 px-4">{{ karyawan.nup }}</td>
-                        <td class="py-2 px-4">{{ karyawan.jabatan }}</td>
+                        <td class="py-2 px-4">{{ karyawan.jabatan or '-' }}</td>
+                        <td class="py-2 px-4">{{ karyawan.unit_kerja or '-' }}</td>
+                        <td class="py-2 px-4">Rp {{ karyawan.gaji_honorarium | rupiah }}</td>
                         <td class="py-2 px-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                {% if karyawan.status == 'Aktif' %} bg-green-100 text-green-800
+                                {% else %} bg-gray-100 text-gray-800 {% endif %}">
                                 {{ karyawan.status }}
                             </span>
                         </td>
@@ -136,7 +191,13 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-gray-500">Tidak ada karyawan aktif.</td>
+                        <td colspan="7" class="text-center py-4 text-gray-500">
+                            {% if search_query or selected_unit_kerja or gaji_min or gaji_max %}
+                                Tidak ada karyawan aktif yang cocok dengan filter Anda.
+                            {% else %}
+                                Belum ada karyawan aktif.
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
